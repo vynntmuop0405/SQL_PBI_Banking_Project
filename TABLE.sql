@@ -19,17 +19,19 @@ CREATE TABLE bank_loan_accounts (
     start_date DATE NOT NULL,
     due_date DATE NOT NULL,
     status NVARCHAR(20) DEFAULT 'active', -- active, closed, overdue, prepaid
-    CONSTRAINT fk_loan_customer FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
+    CONSTRAINT fk_loan_customer FOREIGN KEY (customer_id) 
+        REFERENCES bank_customers(customer_id)
 );
 
--- 3. Bảng Lịch Trả Nợ (Schedule)
+-- 3. Bảng Lịch Trả Nợ
 CREATE TABLE bank_loan_schedule (
     schedule_id INT IDENTITY(1,1) PRIMARY KEY,
     loan_id INT NOT NULL,
     installment_no INT NOT NULL,
     due_date DATE NOT NULL,
     expected_amount DECIMAL(18,2) NOT NULL,
-    CONSTRAINT fk_schedule_loan FOREIGN KEY (loan_id) REFERENCES loan_accounts(loan_id)
+    CONSTRAINT fk_schedule_loan FOREIGN KEY (loan_id) 
+        REFERENCES bank_loan_accounts(loan_id)
 );
 
 -- 4. Bảng Thanh Toán
@@ -39,7 +41,8 @@ CREATE TABLE bank_repayments (
     repayment_date DATE NOT NULL,
     repayment_amount DECIMAL(18,2) NOT NULL,
     is_late BIT DEFAULT 0,
-    CONSTRAINT fk_repayment_loan FOREIGN KEY (loan_id) REFERENCES loan_accounts(loan_id)
+    CONSTRAINT fk_repayment_loan FOREIGN KEY (loan_id) 
+        REFERENCES bank_loan_accounts(loan_id)
 );
 
 -- 5. Bảng Phạt
@@ -50,8 +53,10 @@ CREATE TABLE bank_penalties (
     penalty_amount DECIMAL(18,2) NOT NULL,
     penalty_type NVARCHAR(50), -- late_fee, prepayment_fee, etc.
     applied_date DATE DEFAULT GETDATE(),
-    CONSTRAINT fk_penalty_loan FOREIGN KEY (loan_id) REFERENCES loan_accounts(loan_id),
-    CONSTRAINT fk_penalty_repayment FOREIGN KEY (repayment_id) REFERENCES repayments(repayment_id)
+    CONSTRAINT fk_penalty_loan FOREIGN KEY (loan_id) 
+        REFERENCES bank_loan_accounts(loan_id),
+    CONSTRAINT fk_penalty_repayment FOREIGN KEY (repayment_id) 
+        REFERENCES bank_repayments(repayment_id)
 );
 
 -- 6. Bảng Giao Dịch
@@ -61,6 +66,6 @@ CREATE TABLE bank_transactions (
     transaction_type NVARCHAR(50), -- disbursement, repayment, penalty, interest, adjustment
     amount DECIMAL(18,2) NOT NULL,
     transaction_date DATE DEFAULT GETDATE(),
-    CONSTRAINT fk_transaction_loan FOREIGN KEY (loan_id) REFERENCES loan_accounts(loan_id)
+    CONSTRAINT fk_transaction_loan FOREIGN KEY (loan_id) 
+        REFERENCES bank_loan_accounts(loan_id)
 );
-
