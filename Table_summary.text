@@ -1,6 +1,53 @@
 Bảng Khách Hàng: bank_customers
+    customer_id
+    full_name
+    dob
+    id_card
+    phone
+    email
+    created_at
+
 Bảng Khoản Vay: bank_loan_accounts
+    loan_id
+    customer_id
+    loan_type
+    loan_amount
+    interest_rate
+    start_date
+    due_date
+    status
+
 Bảng Lịch Trả Nợ: bank_loan_schedule
+    schedule_id
+    loan_id
+    installment_no
+    due_date
+    expected_amount
+
 Bảng Thanh Toán: bank_repayments
+    repayment_id
+    loan_id
+    repayment_date
+    repayment_amount
+    is_late
+
 Bảng Phạt: bank_penalties
+    penalty_id
+    loan_id
+    repayment_id
+    penalty_amount
+    penalty_type
+    applied_date
+
 Bảng Giao Dịch: bank_transactions
+    transaction_id
+    loan_id
+    transaction_type
+    amount
+    transaction_date
+
+Lệnh trả tên cột trong 1 bảng: 
+SELECT COLUMN_NAME
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = 'bank_customers'
+ORDER BY ORDINAL_POSITION;
