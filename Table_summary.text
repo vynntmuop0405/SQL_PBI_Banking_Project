@@ -1,0 +1,6 @@
+Bảng Khách Hàng: bank_customers
+Bảng Khoản Vay: bank_loan_accounts
+Bảng Lịch Trả Nợ: bank_loan_schedule
+Bảng Thanh Toán: bank_repayments
+Bảng Phạt: bank_penalties
+Bảng Giao Dịch: bank_transactions
