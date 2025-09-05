@@ -8,6 +8,7 @@ CREATE TABLE customers (
     email NVARCHAR(100),
     created_at DATETIME DEFAULT GETDATE()
 );
+---
 
 -- 2. Bảng Khoản Vay
 CREATE TABLE loan_accounts (
