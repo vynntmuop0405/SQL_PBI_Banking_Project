@@ -1,5 +1,5 @@
 -- 1. Bảng Khách Hàng
-CREATE TABLE customers (
+CREATE TABLE bank_customers (
     customer_id INT IDENTITY(1,1) PRIMARY KEY,
     full_name NVARCHAR(200) NOT NULL,
     dob DATE,
@@ -8,10 +8,9 @@ CREATE TABLE customers (
     email NVARCHAR(100),
     created_at DATETIME DEFAULT GETDATE()
 );
----
 
 -- 2. Bảng Khoản Vay
-CREATE TABLE loan_accounts (
+CREATE TABLE bank_loan_accounts (
     loan_id INT IDENTITY(1,1) PRIMARY KEY,
     customer_id INT NOT NULL,
     loan_type NVARCHAR(50),  -- personal, mortgage, business...
@@ -24,7 +23,7 @@ CREATE TABLE loan_accounts (
 );
 
 -- 3. Bảng Lịch Trả Nợ (Schedule)
-CREATE TABLE loan_schedule (
+CREATE TABLE bank_loan_schedule (
     schedule_id INT IDENTITY(1,1) PRIMARY KEY,
     loan_id INT NOT NULL,
     installment_no INT NOT NULL,
@@ -34,7 +33,7 @@ CREATE TABLE loan_schedule (
 );
 
 -- 4. Bảng Thanh Toán
-CREATE TABLE repayments (
+CREATE TABLE bank_repayments (
     repayment_id INT IDENTITY(1,1) PRIMARY KEY,
     loan_id INT NOT NULL,
     repayment_date DATE NOT NULL,
@@ -44,7 +43,7 @@ CREATE TABLE repayments (
 );
 
 -- 5. Bảng Phạt
-CREATE TABLE penalties (
+CREATE TABLE bank_penalties (
     penalty_id INT IDENTITY(1,1) PRIMARY KEY,
     loan_id INT NOT NULL,
     repayment_id INT NULL,
@@ -56,7 +55,7 @@ CREATE TABLE penalties (
 );
 
 -- 6. Bảng Giao Dịch
-CREATE TABLE transactions (
+CREATE TABLE bank_transactions (
     transaction_id INT IDENTITY(1,1) PRIMARY KEY,
     loan_id INT NOT NULL,
     transaction_type NVARCHAR(50), -- disbursement, repayment, penalty, interest, adjustment
