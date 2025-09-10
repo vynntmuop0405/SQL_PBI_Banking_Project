@@ -66,4 +66,30 @@ RETURN @avg_rate;
 END;
 GO
 -- CHECK
-SELECT dbo.fn_avg_interest_rate_by_loan_type ('mortgage') AS avg
+SELECT dbo.fn_avg_interest_rate_by_loan_type ('mortgage') AS avg_int_by_type 
+
+
+# # NHÓM 2 - TRẢ NỢ & HÀNH VI KH
+
+--Số ngày trễ hạn trung bình của khách hàng.
+CREATE OR ALTER FUNCTION dbo.fn_avg_days_late_customer ( @customer_id INT )
+RETURNS DECIMAL(10,2)
+AS
+BEGIN
+DECLARE @avg_days DECIMAL(10,2);
+WITH LateRepayments AS (
+SELECT DATEDIFF(DAY, s.due_date, r.repayment_date) AS days_late
+FROM bank_repayments r
+INNER JOIN bank_loan_accounts l ON r.loan_id = l.loan_id
+INNER JOIN bank_loan_schedule s ON r.loan_id = s.loan_id AND r.repayment_date >= s.due_date
+WHERE l.customer_id = @customer_id
+      AND r.is_late = 1
+)
+SELECT @avg_days = ISNULL(AVG(CAST(days_late AS DECIMAL(10,2))), 0)
+FROM LateRepayments;
+RETURN @avg_days;
+END;
+GO
+-- CHECK:
+SELECT fn_avg_days_late_customer(619) AS avg_late_day_by_cust
+
