@@ -93,3 +93,6 @@ GO
 -- CHECK:
 SELECT fn_avg_days_late_customer(619) AS avg_late_day_by_cust
 
+-- Tỷ lệ số lần trả đúng hạn / tổng số lần trả.
+
+
