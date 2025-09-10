@@ -114,3 +114,28 @@ GO
 -- CHECK:
 SELECT dbo.fn_repayment_on_time_ratio (619) AS on_time_ratio
 
+--Trả về danh sách khách hàng trễ hạn nhiều nhất trong năm.
+CREATE OR ALTER FUNCTION dbo.fn_top_late_customers
+( @limit_n INT, @year INT)
+RETURNS TABLE
+AS
+RETURN
+(
+    SELECT TOP (@limit_n)
+           c.customer_id,
+           c.full_name,
+           COUNT(*) AS late_count
+    FROM bank_repayments a
+    INNER JOIN bank_loan_accounts b ON a.loan_id = b.loan_id
+    INNER JOIN bank_customers c ON b.customer_id = c.customer_id
+    WHERE a.is_late = 1
+		AND YEAR(a.repayment_date) = @year
+    GROUP BY c.customer_id, c.full_name
+    ORDER BY COUNT(*) DESC
+);
+GO
+
+-- CHECK:
+SELECT * FROM dbo.fn_top_late_customers (10,2024) AS on_time_ratio
+
+
