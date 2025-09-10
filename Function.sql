@@ -94,5 +94,23 @@ GO
 SELECT fn_avg_days_late_customer(619) AS avg_late_day_by_cust
 
 -- Tỷ lệ số lần trả đúng hạn / tổng số lần trả.
+CREATE OR ALTER FUNCTION dbo.fn_repayment_on_time_ratio (@customer_id INT )
+RETURNS DECIMAL(5,2)  
+AS
+BEGIN
+    DECLARE @ratio DECIMAL(5,2);
+    DECLARE @total INT, @on_time INT;
+    SELECT	@total = COUNT(*),
+			@on_time = SUM(CASE WHEN r.is_late = 0 THEN 1 ELSE 0 END)
+    FROM bank_repayments r
+    INNER JOIN bank_loan_accounts l ON r.loan_id = l.loan_id
+    WHERE l.customer_id = @customer_id;
+    IF @total = 0 SET @ratio = 0;
+    ELSE SET @ratio = CAST(@on_time * 100.0 / @total AS DECIMAL(5,2));
+    RETURN @ratio;
+END;
+GO
 
+-- CHECK:
+SELECT dbo.fn_repayment_on_time_ratio (619) AS on_time_ratio
 
