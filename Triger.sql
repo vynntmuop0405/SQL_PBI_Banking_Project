@@ -43,3 +43,29 @@ BEGIN
     WHERE d.status <> i.status; 
 END;
 GO
+
+-- Tạo trigger kiểm tra: 
+-- khi insert vào repayments, nếu repayment_amount < expected_amount 
+-- trong loan_schedule thì tự động flag is_partial = true.
+ALTER TABLE bank_repayments
+ADD is_partial BIT DEFAULT 0;
+--
+ALTER TABLE bank_repayments
+ADD schedule_id INT NULL
+    CONSTRAINT fk_repayment_schedule FOREIGN KEY (schedule_id) 
+    REFERENCES bank_loan_schedule(schedule_id);
+--
+CREATE OR ALTER TRIGGER trg_flag_partial_repayment
+ON bank_repayments
+AFTER INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    UPDATE a
+    SET a.is_partial = 1
+    FROM bank_repayments a
+    INNER JOIN inserted b ON a.repayment_id = b.repayment_id
+    INNER JOIN bank_loan_schedule c ON c.schedule_id = b.schedule_id
+    WHERE b.repayment_amount < c.expected_amount;
+END;
+GO
