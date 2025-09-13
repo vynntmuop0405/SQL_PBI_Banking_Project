@@ -69,3 +69,37 @@ BEGIN
     WHERE b.repayment_amount < c.expected_amount;
 END;
 GO
+
+-- Tạo trigger gửi cảnh báo: khi penalty_amount > 10% loan gốc 
+-- → insert vào bảng alerts.
+CREATE TABLE bank_alerts (
+    alert_id INT IDENTITY(1,1) PRIMARY KEY,
+    loan_id INT NOT NULL,
+    penalty_id INT NOT NULL,
+    alert_message NVARCHAR(500),
+    created_at DATETIME DEFAULT GETDATE(),
+    CONSTRAINT fk_alert_loan FOREIGN KEY (loan_id) 
+		REFERENCES bank_loan_accounts(loan_id),
+    CONSTRAINT fk_alert_penalty FOREIGN KEY (penalty_id) 
+		REFERENCES bank_penalties(penalty_id)
+)
+--
+CREATE OR ALTER TRIGGER trg_alert_high_penalty
+ON bank_penalties
+AFTER INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    INSERT INTO bank_alerts (loan_id, penalty_id, alert_message, created_at)
+    SELECT 
+        i.loan_id,
+        i.penalty_id,
+        'Penalty exceeds 10% of loan principal. Penalty: ' 
+            + CAST(i.penalty_amount AS NVARCHAR(50))
+            + ' / Loan principal: ' + CAST(l.loan_amount AS NVARCHAR(50)),
+        GETDATE()
+    FROM inserted i
+    INNER JOIN bank_loan_accounts l ON i.loan_id = l.loan_id
+    WHERE i.penalty_amount > (0.1 * l.loan_amount);
+END;
+GO
