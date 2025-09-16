@@ -50,16 +50,34 @@ SELECT
             WHEN t.transaction_type = 'repayment'    THEN -t.amount
             ELSE 0
         END) AS net_change,
-    COUNT_BIG(*) AS cnt -- bắt buộc để Indexed View hợp lệ
+    COUNT_BIG(*) AS cnt
 FROM dbo.bank_loan_accounts la
 JOIN dbo.bank_transactions t
      ON la.loan_id = t.loan_id
 GROUP BY 
     la.loan_id,
     la.customer_id,
-    CONVERT(DATE, t.transaction_date);
+    CONVERT(DATE, t.transaction_date)
 GO
 
--- Tạo clustered index để materialize view
 CREATE UNIQUE CLUSTERED INDEX ix_mv_daily_balance 
-    ON mv_daily_balance(loan_id, balance_date);
+    ON mv_daily_balance(loan_id, balance_date)
+
+-- Materialized View mv_penalty_analysis: tổng hợp số tiền phạt theo loan_type và theo tháng.
+CREATE VIEW mv_penalty_analysis
+WITH SCHEMABINDING
+AS
+SELECT 
+    la.loan_type,
+    YEAR(p.applied_date) AS penalty_year,
+    MONTH(p.applied_date) AS penalty_month,
+    SUM(p.penalty_amount) AS total_penalty,
+    COUNT_BIG(*) AS cnt
+FROM dbo.bank_penalties p
+JOIN dbo.bank_loan_accounts la
+     ON p.loan_id = la.loan_id
+GROUP BY la.loan_type, YEAR(p.applied_date), MONTH(p.applied_date)
+GO
+
+CREATE UNIQUE CLUSTERED INDEX ix_mv_penalty_analysis
+    ON mv_penalty_analysis(loan_type, penalty_year, penalty_month)
