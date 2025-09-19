@@ -161,4 +161,22 @@ SELECT
         / loan_amount * 100) AS avg_pct_principal_repaid
 FROM early_closed_loans
 
+            6. RỦI RO & NỢ XẤU
+-- Tỷ lệ dư nợ quá hạn trên 30 ngày so với tổng dư nợ
+WITH total_outstanding AS (
+    SELECT SUM(loan_amount) AS total_loan
+    FROM bank_loan_accounts
+    WHERE status IN ('active','overdue')
+),
+overdue_30d AS (
+    SELECT SUM(loan_amount) AS overdue_loan
+    FROM bank_loan_accounts 
+    WHERE status = 'overdue'
+      AND DATEDIFF(DAY, due_date, GETDATE()) > 30
+)
+SELECT 
+    CAST(a.overdue_loan AS DECIMAL(18,2)) / b.total_loan * 100 AS pct_overdue_30d
+FROM overdue_30d a
+CROSS JOIN total_outstanding b
+
 
