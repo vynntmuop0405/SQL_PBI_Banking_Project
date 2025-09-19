@@ -63,13 +63,13 @@ SELECT TOP 1
 FROM bank_loan_accounts
 ORDER BY interest_rate DESC
 -- Trung bình lãi phải trả mỗi tháng của khách hàng vay personal loan
-SELECT 
-    AVG(monthly_interest) AS avg_monthly_interest_personal
-FROM (
+WITH monthly_interest_cte AS (
     SELECT 
         a.customer_id,
         a.full_name,
-        AVG(t.amount) AS monthly_interest
+        YEAR(c.transaction_date) AS txn_year,
+        MONTH(c.transaction_date) AS txn_month,
+        AVG(c.amount) AS monthly_interest
     FROM bank_customers a
     JOIN bank_loan_accounts b
          ON a.customer_id = b.customer_id
@@ -77,5 +77,11 @@ FROM (
          ON b.loan_id = c.loan_id
     WHERE b.loan_type = 'personal'
       AND c.transaction_type = 'interest'
-    GROUP BY a.customer_id, c.full_name, YEAR(c.transaction_date), MONTH(c.transaction_date)
-) AS sub
+    GROUP BY a.customer_id, a.full_name, YEAR(c.transaction_date), MONTH(c.transaction_date)
+)
+SELECT 
+    AVG(monthly_interest) AS avg_monthly_interest_personal
+FROM monthly_interest_cte
+
+            4. Trả nợ & hành vi khách hàng
+-- Bao nhiêu % khoản vay được trả đúng hạn?
