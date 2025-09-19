@@ -85,3 +85,50 @@ FROM monthly_interest_cte
 
             4. Trả nợ & hành vi khách hàng
 -- Bao nhiêu % khoản vay được trả đúng hạn?
+WITH loan_repayment_status AS (
+    SELECT 
+        loan_id,
+        MAX(CAST(is_late AS INT)) AS has_late  -- ép BIT -> INT
+    FROM bank_repayments
+    GROUP BY loan_id
+)
+SELECT 
+    CAST(SUM(CASE WHEN has_late = 0 THEN 1 ELSE 0 END) * 100.0 
+         / COUNT(*) AS DECIMAL(5,2)) AS pct_on_time_loans
+FROM loan_repayment_status
+-- Tỷ lệ khoản vay bị trễ hạn ≥ 1 lần trong quá trình trả?
+WITH loan_repayment_status AS (
+    SELECT 
+        loan_id,
+        MAX(CAST(is_late AS INT)) AS has_late
+    FROM bank_repayments
+    GROUP BY loan_id
+)
+SELECT 
+    CAST(SUM(CASE WHEN has_late = 1 THEN 1 ELSE 0 END) * 100.0 
+         / COUNT(*) AS DECIMAL(5,2)) AS pct_loans_with_late
+FROM loan_repayment_status
+-- Khách hàng nào có nhiều lần trễ hạn nhất? Tổng tiền phạt đã nộp bao nhiêu?
+SELECT TOP 1
+    a.customer_id,
+    a.full_name,
+    COUNT(c.repayment_id) AS late_count,
+    ISNULL(SUM(d.penalty_amount), 0) AS total_penalty_paid
+FROM bank_customers a
+JOIN bank_loan_accounts b 
+     ON a.customer_id = b.customer_id
+JOIN bank_repayments c 
+     ON b.loan_id = c.loan_id
+LEFT JOIN bank_penalties d 
+     ON c.repayment_id = d.repayment_id
+WHERE c.is_late = 1
+GROUP BY a.customer_id, a.full_name
+ORDER BY late_count DESC, total_penalty_paid DESC
+-- Trung bình thời gian trễ hạn (days late) là bao nhiêu?
+SELECT 
+    AVG(DATEDIFF(DAY, b.due_date, a.repayment_date)) AS avg_days_late
+FROM bank_repayments a
+JOIN bank_loan_schedule b 
+     ON a.loan_id = b.loan_id 
+    AND a.repayment_date >= b.due_date
+WHERE a.is_late = 1
