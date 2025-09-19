@@ -132,3 +132,33 @@ JOIN bank_loan_schedule b
      ON a.loan_id = b.loan_id 
     AND a.repayment_date >= b.due_date
 WHERE a.is_late = 1
+
+             5. PHÍ PHẠT VÀ TẤT TOÁN TRƯỚC HẠN
+-- Tổng số tiền phạt thu được trong 12 tháng qua là bao nhiêu?
+WITH penalty_last_12_months AS (
+    SELECT 
+        amount
+    FROM bank_transactions
+    WHERE transaction_type = 'penalty'
+      AND transaction_date >= DATEADD(MONTH, -12, CAST(GETDATE() AS DATE))
+)
+SELECT SUM(amount) AS total_penalty_last_12_months
+FROM penalty_last_12_months
+-- Trong nhóm khách hàng tất toán trước hạn: trung bình họ đã trả được bao nhiêu % gốc trước khi tất toán?
+WITH early_closed_loans AS (
+    SELECT 
+        a.loan_id,
+        a.loan_amount,
+        SUM(b.repayment_amount) AS total_principal_paid
+    FROM bank_loan_accounts a
+    JOIN bank_repayments b 
+         ON a.loan_id = b.loan_id
+    WHERE a.status = 'prepaid'
+    GROUP BY a.loan_id, a.loan_amount
+)
+SELECT 
+    AVG(CAST(total_principal_paid AS DECIMAL(18,2)) 
+        / loan_amount * 100) AS avg_pct_principal_repaid
+FROM early_closed_loans
+
+
