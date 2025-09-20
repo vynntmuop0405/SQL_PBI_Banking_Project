@@ -178,5 +178,47 @@ SELECT
     CAST(a.overdue_loan AS DECIMAL(18,2)) / b.total_loan * 100 AS pct_overdue_30d
 FROM overdue_30d a
 CROSS JOIN total_outstanding b
+-- Phân tích nợ xấu theo nhóm tuổi khách hàng (ví dụ <30, 30–50, >50).
+WITH customer_age AS (
+    SELECT 
+        c.customer_id,
+        DATEDIFF(YEAR, c.dob, GETDATE()) AS age
+    FROM bank_customers c
+),
+loan_with_age AS (
+    SELECT 
+        l.loan_id,
+        l.loan_amount,
+        l.status,
+        ca.age
+    FROM bank_loan_accounts l
+    JOIN customer_age ca ON l.customer_id = ca.customer_id
+)
+SELECT 
+    CASE 
+        WHEN age < 30 THEN '<30'
+        WHEN age BETWEEN 30 AND 50 THEN '30-50'
+        ELSE '>50'
+    END AS age_group,
+    SUM(CASE WHEN status = 'overdue' THEN loan_amount ELSE 0 END) AS overdue_amount,
+    SUM(loan_amount) AS total_amount,
+    CAST(SUM(CASE WHEN status = 'overdue' THEN loan_amount ELSE 0 END) * 100.0 
+         / SUM(loan_amount) AS DECIMAL(5,2)) AS pct_overdue
+FROM loan_with_age
+GROUP BY CASE 
+             WHEN age < 30 THEN '<30'
+             WHEN age BETWEEN 30 AND 50 THEN '30-50'
+             ELSE '>50'
+         END
+-- Nhóm loan_type nào có tỷ lệ quá hạn cao nhất?
+SELECT 
+    loan_type,
+    SUM(CASE WHEN status = 'overdue' THEN loan_amount ELSE 0 END) AS overdue_amount,
+    SUM(loan_amount) AS total_amount,
+    CAST(SUM(CASE WHEN status = 'overdue' THEN loan_amount ELSE 0 END) * 100.0 
+         / SUM(loan_amount) AS DECIMAL(5,2)) AS pct_overdue
+FROM bank_loan_accounts
+GROUP BY loan_type
+ORDER BY 4 DESC
 
 
