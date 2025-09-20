@@ -274,5 +274,32 @@ SELECT
 FROM loan_interest a
 JOIN loan_principal b ON a.loan_type = b.loan_type
 -- Top 5 khách hàng mang lại nhiều lợi nhuận nhất
+WITH customer_interest AS (
+    SELECT 
+        a.customer_id,
+        a.full_name,
+        SUM(c.amount) AS total_interest
+    FROM bank_customers a
+    JOIN bank_loan_accounts b ON a.customer_id = b.customer_id
+    JOIN bank_transactions c ON b.loan_id = c.loan_id
+    WHERE c.transaction_type = 'interest'
+    GROUP BY a.customer_id, a.full_name
+),
+customer_penalty AS (
+    SELECT 
+        a.customer_id,
+        SUM(c.penalty_amount) AS total_penalty
+    FROM bank_customers a
+    JOIN bank_loan_accounts b ON a.customer_id = b.customer_id
+    JOIN bank_penalties c ON b.loan_id = c.loan_id
+    GROUP BY a.customer_id
+)
+SELECT TOP 5 
+    a.customer_id,
+    a.full_name,
+    a.total_interest - ISNULL(b.total_penalty,0) AS net_profit
+FROM customer_interest a
+LEFT JOIN customer_penalty b ON a.customer_id = b.customer_id
+ORDER BY net_profit DESC
 
 
