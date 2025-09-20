@@ -301,5 +301,24 @@ SELECT TOP 5
 FROM customer_interest a
 LEFT JOIN customer_penalty b ON a.customer_id = b.customer_id
 ORDER BY net_profit DESC
+-- Nếu ngân hàng giảm 1% lãi suất cho toàn bộ khoản vay mortgage loan, doanh thu lãi giảm bao nhiêu %
+WITH mortgage_interest AS (
+    SELECT SUM(b.amount) AS total_interest
+    FROM bank_loan_accounts a
+    JOIN bank_transactions b ON a.loan_id = b.loan_id
+    WHERE a.loan_type = 'mortgage'
+      AND b.transaction_type = 'interest'
+),
+mortgage_principal AS (
+    SELECT SUM(loan_amount) AS total_principal
+    FROM loan_accounts
+    WHERE loan_type = 'mortgage'
+)
+SELECT 
+    a.total_interest,
+    b.total_principal * 0.01 AS estimated_interest_loss,
+    CAST((b.total_principal * 0.01) * 100.0 / a.total_interest AS DECIMAL(5,2)) AS pct_loss
+FROM mortgage_interest a
+CROSS JOIN mortgage_principal b
 
 
