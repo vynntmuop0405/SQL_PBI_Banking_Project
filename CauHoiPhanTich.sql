@@ -221,4 +221,58 @@ FROM bank_loan_accounts
 GROUP BY loan_type
 ORDER BY 4 DESC
 
+            4. HIỆU QUẢ TÀI CHÍNH (BANKING KPI)
+-- Thu nhập lãi ròng (Interest Income – Penalty Loss) theo từng tháng
+WITH monthly_interest AS (
+    SELECT 
+        YEAR(transaction_date) AS year,
+        MONTH(transaction_date) AS tran_date,
+        SUM(amount) AS total_interest
+    FROM bank_transactions
+    WHERE transaction_type = 'interest'
+    GROUP BY YEAR(transaction_date), MONTH(transaction_date)
+),
+monthly_penalty AS (
+    SELECT 
+        YEAR(applied_date) AS year,
+        MONTH(applied_date) AS tran_date,
+        SUM(penalty_amount) AS total_penalty
+    FROM bank_penalties
+    GROUP BY YEAR(applied_date), MONTH(applied_date)
+)
+SELECT 
+    a.year,
+    a.tran_date,
+    a.total_interest - ISNULL(b.total_penalty,0) AS net_interest_income
+FROM monthly_interest a
+LEFT JOIN monthly_penalty b
+       ON a.year = b.year AND a.tran_date = b.tran_date
+ORDER BY a.year, a.tran_date
+-- Tỷ suất lợi nhuận từ lãi vay (%) theo từng loại khoản vay
+WITH loan_interest AS (
+    SELECT 
+        a.loan_type,
+        SUM(b.amount) AS total_interest
+    FROM bank_loan_accounts a
+    JOIN bank_transactions b 
+         ON a.loan_id = b.loan_id
+    WHERE b.transaction_type = 'interest'
+    GROUP BY a.loan_type
+),
+loan_principal AS (
+    SELECT 
+        loan_type,
+        SUM(loan_amount) AS total_principal
+    FROM bank_loan_accounts
+    GROUP BY loan_type
+)
+SELECT 
+    a.loan_type,
+    a.total_interest,
+    b.total_principal,
+    CAST(a.total_interest * 100.0 / b.total_principal AS DECIMAL(5,2)) AS profit_margin_pct
+FROM loan_interest a
+JOIN loan_principal b ON a.loan_type = b.loan_type
+-- Top 5 khách hàng mang lại nhiều lợi nhuận nhất
+
 
